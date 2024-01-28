@@ -4,6 +4,7 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
         let globalStartElementComponent;
         let globalRelatedRoadObjsMap;
         let globalRoadSectionPropsMap = new Map();
+        let globalIntersectionMap = new Map();
 
         /************************
             Public Functions
@@ -50,6 +51,7 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
             // further props
             setIsFinalElementForAllRoadSections();
             setCurvePropsForAllRoadSections();
+            getIntersections()
         }
 
         function resetCurrentRoadSectionPropsMap() {
@@ -70,6 +72,130 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
         /************************
                 Calls
         ************************/
+
+        function getIntersections() {
+            globalRelatedRoadObjsMap.forEach(roadObj => {
+                let roadSectionArr = roadObj.startElementId != globalStartElementComponent.id
+                    ? [...roadObj.roadSectionArr].reverse()
+                    : roadObj.roadSectionArr;
+
+                for (let i = 1; i < roadSectionArr.length; i++) {
+                    current = roadSectionArr[i];
+                    predecessor = roadSectionArr[i - 1];
+                    const directionOfCurrent = globalRoadSectionPropsMap.get(current).direction;
+                    const directionOfPredecessor = globalRoadSectionPropsMap.get(predecessor).direction;
+                    if (directionOfCurrent != directionOfPredecessor) {
+                        calculateIntersection(current, predecessor)
+                    }
+                }
+            })
+        }
+
+        function calculateIntersection(current, predecessor) {
+            const currentComponent = document.getElementById(current);
+            const predecessorComponent = document.getElementById(predecessor);
+
+            const currentPos = currentComponent.getAttribute("position");
+            const predecessorPos = predecessorComponent.getAttribute("position");
+
+            const currentWidth = currentComponent.getAttribute("width");
+            const currentDepth = currentComponent.getAttribute("depth");
+
+            const predecessorWidth = predecessorComponent.getAttribute("width");
+            const predecessorDepth = predecessorComponent.getAttribute("depth");
+
+            // calculate extents of rectangles in both directions
+            const currentLeftX = currentPos.x - currentWidth / 2;
+            const currentRightX = currentPos.x + currentWidth / 2;
+            const currentTopZ = currentPos.z - currentDepth / 2;
+            const currentBottomZ = currentPos.z + currentDepth / 2;
+
+            const predecessorLeftX = predecessorPos.x - predecessorWidth / 2;
+            const predecessorRightX = predecessorPos.x + predecessorWidth / 2;
+            const predecessorTopZ = predecessorPos.z - predecessorDepth / 2;
+            const predecessorBottomZ = predecessorPos.z + predecessorDepth / 2;
+
+            // calculate intersection region
+            const intersectionLeftX = Math.max(currentLeftX, predecessorLeftX);
+            const intersectionRightX = Math.min(currentRightX, predecessorRightX);
+            const intersectionTopZ = Math.max(currentTopZ, predecessorTopZ);
+            const intersectionBottomZ = Math.min(currentBottomZ, predecessorBottomZ);
+
+            // Calculate midpoint of intersection region
+            const intersectionMidpointX = (intersectionLeftX + intersectionRightX) / 2;
+            const intersectionMidpointZ = (intersectionTopZ + intersectionBottomZ) / 2;
+
+            const intersectionMidpoint = { x: intersectionMidpointX, z: intersectionMidpointZ };
+
+            const randomNumber = Math.floor(Math.random() * 100000) + 1;
+            globalIntersectionMap.set(randomNumber, intersectionMidpoint)
+            drawLinesBetweenSpheres()
+            console.log(globalIntersectionMap)
+        }
+
+        function drawSpheresOnMidpoints() {
+            const scene = document.querySelector('a-scene'); // Replace 'a-scene' with your actual scene selector
+            const sphereRadius = 0.2; // Adjust the radius of the spheres as needed
+
+            globalIntersectionMap.forEach(intersectionMidpoint => {
+                const geometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
+
+                const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+
+                const sphere = new THREE.Mesh(geometry, material);
+
+                sphere.position.set(intersectionMidpoint.x, 1, intersectionMidpoint.z);
+
+                scene.object3D.add(sphere);
+            });
+        }
+
+
+        function drawLinesBetweenSpheres() {
+            const scene = document.querySelector('a-scene'); // Replace 'a-scene' with your actual scene selector
+            const sphereRadius = 0.2; // Adjust the radius of the spheres as needed
+            const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+
+            let previousIntersection;
+
+            globalIntersectionMap.forEach((intersectionMidpoint, intersectionId) => {
+                const sphereGeometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
+
+                const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+
+                const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+
+                sphere.position.set(intersectionMidpoint.x, 1, intersectionMidpoint.z);
+
+                scene.object3D.add(sphere);
+
+                if (previousIntersection) {
+                    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 0.1 });
+                    const lineGeometry = new THREE.Geometry();
+                    lineGeometry.vertices.push(
+                        new THREE.Vector3(previousIntersection.x, 1, previousIntersection.z),
+                        new THREE.Vector3(intersectionMidpoint.x, 1, intersectionMidpoint.z)
+                    );
+
+                    const line = new THREE.Line(lineGeometry, lineMaterial);
+
+                    scene.object3D.add(line);
+                }
+
+                previousIntersection = intersectionMidpoint;
+            });
+        }
+
+
+
+
+
+
+
+
+
+
+        /****** */
 
         function setPropsForInitialRoadSectionsInCallsRelation() {
             const roadObjsInCallsRelation = getRoadObjsInCallsRelation();
