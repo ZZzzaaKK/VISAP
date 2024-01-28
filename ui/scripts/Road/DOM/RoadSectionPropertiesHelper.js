@@ -51,7 +51,7 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
             // further props
             setIsFinalElementForAllRoadSections();
             setCurvePropsForAllRoadSections();
-            getIntersections()
+            // getIntersections()
         }
 
         function resetCurrentRoadSectionPropsMap() {
