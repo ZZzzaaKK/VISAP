@@ -2,9 +2,7 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
     return (function () {
 
         let globalStartElementComponent;
-        let globalRelatedRoadObjsMap;
         let globalRoadSectionPropsMap = new Map();
-        let globalIntersectionMap = new Map();
 
         /************************
             Public Functions
@@ -13,7 +11,6 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
         // returns a props map for individual roadSections where startElement serves as reference for every attribute
         function getPropsMapForRelatedRoadsStartElementPOV(startElementComponent, relatedRoadObjsMap) {
             globalStartElementComponent = startElementComponent;
-            globalRelatedRoadObjsMap = relatedRoadObjsMap;
 
             createRoadObjIntersectionPropsMap(relatedRoadObjsMap)
             return globalRoadSectionPropsMap;
@@ -25,6 +22,7 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
             addIntersectionCoordinates(roadObjsAdjustedArr);
             console.log(roadObjsAdjustedArr)
             drawSpheresOnMidpoints(roadObjsAdjustedArr)
+            drawTubesBetweenIntersections(roadObjsAdjustedArr)
             //const intersectingRoadSectionsArr = getIntersectingRoadSections(roadObjsAdjustedArr);
         }
 
@@ -171,6 +169,32 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
             })
         }
 
+        function drawTubesBetweenIntersections(roadObjsAdjustedArr) {
+            const scene = document.querySelector('a-scene');
+            const tubeRadius = 0.05; 
+            const tubeMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+        
+            roadObjsAdjustedArr.forEach(roadObj => {
+                for (let i = 1; i < roadObj.roadSectionObjArr.length; i++) {
+                    const currentRoadSectionObj = roadObj.roadSectionObjArr[i];
+                    const prevRoadSectionObj = roadObj.roadSectionObjArr[i - 1];
+        
+                    if (currentRoadSectionObj.intersection != null && prevRoadSectionObj.intersection != null) {
+                        const lineCurve = new THREE.LineCurve3(
+                            new THREE.Vector3(currentRoadSectionObj.intersection.x, 1, currentRoadSectionObj.intersection.z),
+                            new THREE.Vector3(prevRoadSectionObj.intersection.x, 1, prevRoadSectionObj.intersection.z)
+                        );
+        
+                        const tubeGeometry = new THREE.TubeGeometry(lineCurve, 64, tubeRadius, 8, false);
+                        const tubeMesh = new THREE.Mesh(tubeGeometry, tubeMaterial);
+                        scene.object3D.add(tubeMesh);
+                    }
+                }
+            });
+        }
+
+        
+
         /************************
              Other Helper
         ************************/
@@ -183,70 +207,6 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
         function getRoadObjsInIsCalledRelation(relatedRoadObjsMap) {
             return Array.from(relatedRoadObjsMap.values())
                 .filter(roadObj => roadObj.startElementId != globalStartElementComponent.id); // startElement is called by other elements
-        }
-
-        /************************
-             Enriching Props
-        ************************/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        /************************
-                Calls
-        ************************/
-
-
-
-        function drawLinesBetweenSpheres() {
-            const scene = document.querySelector('a-scene'); // Replace 'a-scene' with your actual scene selector
-            const sphereRadius = 0.2; // Adjust the radius of the spheres as needed
-            const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
-
-            let previousIntersection;
-
-            globalIntersectionMap.forEach((intersectionMidpoint, intersectionId) => {
-                const sphereGeometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
-
-                const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-
-                const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-
-                sphere.position.set(intersectionMidpoint.x, 1, intersectionMidpoint.z);
-
-                scene.object3D.add(sphere);
-
-                if (previousIntersection) {
-                    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 0.1 });
-                    const lineGeometry = new THREE.Geometry();
-                    lineGeometry.vertices.push(
-                        new THREE.Vector3(previousIntersection.x, 1, previousIntersection.z),
-                        new THREE.Vector3(intersectionMidpoint.x, 1, intersectionMidpoint.z)
-                    );
-
-                    const line = new THREE.Line(lineGeometry, lineMaterial);
-
-                    scene.object3D.add(line);
-                }
-
-                previousIntersection = intersectionMidpoint;
-            });
         }
 
         return {
