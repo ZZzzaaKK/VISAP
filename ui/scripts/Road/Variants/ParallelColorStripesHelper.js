@@ -60,6 +60,7 @@ const createParallelColorStripesHelper = function (controllerConfig) {
                 drawSpheresOnMidpoints(roadObj);
                 drawTubesBetweenIntersections(roadObj);
                 drawSpheresOnRamps(roadObj);
+                drawTubesToStartEndElement(roadObj)
             })
         }
 
@@ -122,6 +123,38 @@ const createParallelColorStripesHelper = function (controllerConfig) {
                 scene.object3D.add(tubeMesh);
             }
         }
+
+        function drawTubesToStartEndElement(roadObj) {
+            const scene = document.querySelector('a-scene');
+            const tubeRadius = 0.05;
+            const tubeMaterial = new THREE.MeshBasicMaterial({ color: "yellow" });
+        
+            const lastElement = roadObj.roadSectionObjArr[roadObj.roadSectionObjArr.length - 1];
+            const startElement = roadObj.roadSectionObjArr[0];
+        
+            if (startElement.intersection && startElement.intersectionWithStartBorder) {
+                const startLineCurve = new THREE.LineCurve3(
+                    new THREE.Vector3(startElement.intersectionWithStartBorder.x, 1, startElement.intersectionWithStartBorder.z),
+                    new THREE.Vector3(startElement.intersection.x, 1, startElement.intersection.z)
+                );
+        
+                const startTubeGeometry = new THREE.TubeGeometry(startLineCurve, 64, tubeRadius, 8, false);
+                const startTubeMesh = new THREE.Mesh(startTubeGeometry, tubeMaterial);
+                scene.object3D.add(startTubeMesh);
+                
+            } else if (lastElement.intersection && lastElement.intersectionWithEndBorder) {
+                const endLineCurve = new THREE.LineCurve3(
+                    new THREE.Vector3(lastElement.intersectionWithEndBorder.x, 1, lastElement.intersectionWithEndBorder.z),
+                    new THREE.Vector3(lastElement.intersection.x, 1, lastElement.intersection.z)
+                );
+                const endTubeGeometry = new THREE.TubeGeometry(endLineCurve, 64, tubeRadius, 8, false);
+                const endTubeMesh = new THREE.Mesh(endTubeGeometry, tubeMaterial);
+                scene.object3D.add(endTubeMesh);
+            }
+        }
+        
+        
+        
 
 
         function getLaneSideForRoadObj(roadObj) {
