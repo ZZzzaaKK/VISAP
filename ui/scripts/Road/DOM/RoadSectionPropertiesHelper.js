@@ -160,7 +160,7 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
                 roadObj.roadSectionObjArr.forEach(roadSectionObj => {
                     if (roadSectionObj.intersection != null) {
                         const geometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
-                        const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                        const material = new THREE.MeshBasicMaterial({ color: "lime" });
                         const sphere = new THREE.Mesh(geometry, material);
                         sphere.position.set(roadSectionObj.intersection.x, 1, roadSectionObj.intersection.z);
                         scene.object3D.add(sphere);
@@ -171,24 +171,26 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
 
         function drawTubesBetweenIntersections(roadObjsAdjustedArr) {
             const scene = document.querySelector('a-scene');
-            const tubeRadius = 0.05; 
-            const tubeMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+            const tubeRadius = 0.05;
+            const tubeMaterial = new THREE.MeshBasicMaterial({ color: "red" });
         
             roadObjsAdjustedArr.forEach(roadObj => {
-                for (let i = 1; i < roadObj.roadSectionObjArr.length; i++) {
-                    const currentRoadSectionObj = roadObj.roadSectionObjArr[i];
-                    const prevRoadSectionObj = roadObj.roadSectionObjArr[i - 1];
+                const intersections = roadObj.roadSectionObjArr
+                    .filter(roadSectionObj => roadSectionObj.intersection != null)
+                    .map(roadSectionObj => roadSectionObj.intersection);
         
-                    if (currentRoadSectionObj.intersection != null && prevRoadSectionObj.intersection != null) {
-                        const lineCurve = new THREE.LineCurve3(
-                            new THREE.Vector3(currentRoadSectionObj.intersection.x, 1, currentRoadSectionObj.intersection.z),
-                            new THREE.Vector3(prevRoadSectionObj.intersection.x, 1, prevRoadSectionObj.intersection.z)
-                        );
+                for (let i = 1; i < intersections.length; i++) {
+                    const startIntersection = intersections[i - 1];
+                    const endIntersection = intersections[i];
         
-                        const tubeGeometry = new THREE.TubeGeometry(lineCurve, 64, tubeRadius, 8, false);
-                        const tubeMesh = new THREE.Mesh(tubeGeometry, tubeMaterial);
-                        scene.object3D.add(tubeMesh);
-                    }
+                    const lineCurve = new THREE.LineCurve3(
+                        new THREE.Vector3(startIntersection.x, 1, startIntersection.z),
+                        new THREE.Vector3(endIntersection.x, 1, endIntersection.z)
+                    );
+        
+                    const tubeGeometry = new THREE.TubeGeometry(lineCurve, 64, tubeRadius, 8, false);
+                    const tubeMesh = new THREE.Mesh(tubeGeometry, tubeMaterial);
+                    scene.object3D.add(tubeMesh);
                 }
             });
         }
