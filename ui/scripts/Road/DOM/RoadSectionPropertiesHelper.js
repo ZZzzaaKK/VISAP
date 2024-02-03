@@ -9,21 +9,17 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
         ************************/
 
         // returns a props map for individual roadSections where startElement serves as reference for every attribute
-        function getPropsMapForRelatedRoadsStartElementPOV(startElementComponent, relatedRoadObjsMap) {
+        function getRoadObjSectionPropertiesArr(startElementComponent, relatedRoadObjsMap) {
             globalStartElementComponent = startElementComponent;
-
-            createRoadObjIntersectionPropsMap(relatedRoadObjsMap)
-            return globalRoadSectionPropsMap;
+            const roadObjsAdjustedArr = getRoadObjAdjustedArr(relatedRoadObjsMap);
+            return roadObjsAdjustedArr;
         }
 
-        function createRoadObjIntersectionPropsMap(relatedRoadObjsMap) {
+        function getRoadObjAdjustedArr(relatedRoadObjsMap) {
             let roadObjsAdjustedArr = getRoadObjsWithAdjustedRoadSectionOrder(relatedRoadObjsMap);
             addDirectionOfRoadSectionsRelativeToStartElement(roadObjsAdjustedArr);
             addIntersectionCoordinates(roadObjsAdjustedArr);
-            console.log(roadObjsAdjustedArr)
-            drawSpheresOnMidpoints(roadObjsAdjustedArr)
-            drawTubesBetweenIntersections(roadObjsAdjustedArr)
-            //const intersectingRoadSectionsArr = getIntersectingRoadSections(roadObjsAdjustedArr);
+            return roadObjsAdjustedArr
         }
 
         function getRoadObjsWithAdjustedRoadSectionOrder(relatedRoadObjsMap) {
@@ -152,51 +148,6 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
             return intersectionMidpoint;
         }
 
-
-        function drawSpheresOnMidpoints(roadObjsAdjustedArr) {
-            const scene = document.querySelector('a-scene');
-            const sphereRadius = 0.2;
-            roadObjsAdjustedArr.forEach(roadObj => {
-                roadObj.roadSectionObjArr.forEach(roadSectionObj => {
-                    if (roadSectionObj.intersection != null) {
-                        const geometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
-                        const material = new THREE.MeshBasicMaterial({ color: "lime" });
-                        const sphere = new THREE.Mesh(geometry, material);
-                        sphere.position.set(roadSectionObj.intersection.x, 1, roadSectionObj.intersection.z);
-                        scene.object3D.add(sphere);
-                    }
-                })
-            })
-        }
-
-        function drawTubesBetweenIntersections(roadObjsAdjustedArr) {
-            const scene = document.querySelector('a-scene');
-            const tubeRadius = 0.05;
-            const tubeMaterial = new THREE.MeshBasicMaterial({ color: "red" });
-        
-            roadObjsAdjustedArr.forEach(roadObj => {
-                const intersections = roadObj.roadSectionObjArr
-                    .filter(roadSectionObj => roadSectionObj.intersection != null)
-                    .map(roadSectionObj => roadSectionObj.intersection);
-        
-                for (let i = 1; i < intersections.length; i++) {
-                    const startIntersection = intersections[i - 1];
-                    const endIntersection = intersections[i];
-        
-                    const lineCurve = new THREE.LineCurve3(
-                        new THREE.Vector3(startIntersection.x, 1, startIntersection.z),
-                        new THREE.Vector3(endIntersection.x, 1, endIntersection.z)
-                    );
-        
-                    const tubeGeometry = new THREE.TubeGeometry(lineCurve, 64, tubeRadius, 8, false);
-                    const tubeMesh = new THREE.Mesh(tubeGeometry, tubeMaterial);
-                    scene.object3D.add(tubeMesh);
-                }
-            });
-        }
-
-        
-
         /************************
              Other Helper
         ************************/
@@ -212,7 +163,7 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
         }
 
         return {
-            getPropsMapForRelatedRoadsStartElementPOV,
+            getRoadObjSectionPropertiesArr,
         };
     })();
 };
