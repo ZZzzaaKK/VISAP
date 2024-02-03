@@ -42,7 +42,11 @@ const createParallelColorStripesHelper = function (controllerConfig) {
         function resetRoadsHighlight() {
             globalDomHelper.handleLegendForAction("unselect");
             globalDomHelper.handleUnrelatedEntityMonochromacyForAction("unselect", globalRelatedRoadObjsMap)
-            globalDomHelper.removeComponentByIdMarking("_stripe");
+            const scene = document.querySelector('a-scene');
+            scene.object3D.remove(...scene.object3D.children.filter(child => child instanceof THREE.Mesh));
+
+            // Remove tubes
+            scene.object3D.remove(...scene.object3D.children.filter(child => child instanceof THREE.Mesh && child.geometry instanceof THREE.TubeGeometry));
         }
 
         /************************

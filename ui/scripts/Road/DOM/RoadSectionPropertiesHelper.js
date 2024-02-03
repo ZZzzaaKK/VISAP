@@ -25,10 +25,14 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
         function getRoadObjsWithAdjustedRoadSectionOrder(relatedRoadObjsMap) {
             const roadObjsInCallsRelation = getRoadObjsInCallsRelation(relatedRoadObjsMap);
             const roadObjsInIsCalledRelation = getRoadObjsInIsCalledRelation(relatedRoadObjsMap);
-            roadObjsInIsCalledRelation.forEach(roadObj => roadObj.roadSectionObjArr.reverse()); // Reverse the road section arrays in-place
-            return [...roadObjsInCallsRelation, ...roadObjsInIsCalledRelation];
+                    const reversedIsCalledRoadObjs = roadObjsInIsCalledRelation.map(roadObj => ({
+                ...roadObj,
+                roadSectionObjArr: [...roadObj.roadSectionObjArr].reverse(),
+            }));
+                    const roadObjsAdjustedArr = [...roadObjsInCallsRelation, ...reversedIsCalledRoadObjs];
+            return roadObjsAdjustedArr;
         }
-
+        
         function addIntersectionCoordinates(roadObjsAdjustedArr) {
             roadObjsAdjustedArr.forEach(roadObj => {
                 for (let i = 1; i < roadObj.roadSectionObjArr.length; i++) {
