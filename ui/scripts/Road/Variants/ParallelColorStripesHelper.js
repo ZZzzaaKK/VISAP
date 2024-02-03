@@ -58,7 +58,8 @@ const createParallelColorStripesHelper = function (controllerConfig) {
                 .getRoadObjSectionPropertiesArr(globalStartElementComponent, globalRelatedRoadObjsMap);
             roadObjSectionPropertiesArr.forEach(roadObj => {
                 drawSpheresOnMidpoints(roadObj);
-                drawTubesBetweenIntersections(roadObj)
+                drawTubesBetweenIntersections(roadObj);
+                drawSpheresOnRamps(roadObj);
             })
         }
 
@@ -71,6 +72,28 @@ const createParallelColorStripesHelper = function (controllerConfig) {
                     const material = new THREE.MeshBasicMaterial({ color: "lime" });
                     const sphere = new THREE.Mesh(geometry, material);
                     sphere.position.set(roadSectionObj.intersection.x, 1, roadSectionObj.intersection.z);
+                    scene.object3D.add(sphere);
+                }
+            })
+        }
+
+        function drawSpheresOnRamps(roadObj) {
+            const scene = document.querySelector('a-scene');
+            const sphereRadius = 0.2;
+            roadObj.roadSectionObjArr.forEach(roadSectionObj => {
+                if (roadSectionObj.intersectionWithStartBorder != null) {
+                    const geometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
+                    const material = new THREE.MeshBasicMaterial({ color: "cyan" });
+                    const sphere = new THREE.Mesh(geometry, material);
+                    sphere.position.set(roadSectionObj.intersectionWithStartBorder.x, 1, roadSectionObj.intersectionWithStartBorder.z);
+                    scene.object3D.add(sphere);
+                }
+
+                if (roadSectionObj.intersectionWithEndBorder != null) {
+                    const geometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
+                    const material = new THREE.MeshBasicMaterial({ color: "green" });
+                    const sphere = new THREE.Mesh(geometry, material);
+                    sphere.position.set(roadSectionObj.intersectionWithEndBorder.x, 1, roadSectionObj.intersectionWithEndBorder.z);
                     scene.object3D.add(sphere);
                 }
             })
