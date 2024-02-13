@@ -46,6 +46,8 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
                             = getIntersectionCoordinates(currentRoadSectionObj, refRoadSectionObj)
                     } else refRoadSectionObj.intersection = null;
                 }
+                const lastRoadSection = roadObj.roadSectionObjArr[roadObj.roadSectionObjArr.length - 1];
+                lastRoadSection.intersection = null;
             })
         }
 
@@ -71,7 +73,7 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
                     let intersectionWithEndBorder = null;
                     if (i === 0) intersectionWithStartBorder = getCoordinatesForStartEndElementIntersection(roadObj.roadSectionObjArr[i]);
                     if (i === length - 1) intersectionWithEndBorder = getCoordinatesForStartEndElementIntersection(roadObj.roadSectionObjArr[i], isFinal = true);
-        
+
                     roadObj.roadSectionObjArr[i].intersectionWithStartBorder = intersectionWithStartBorder;
                     roadObj.roadSectionObjArr[i].intersectionWithEndBorder = intersectionWithEndBorder;
                 }
@@ -178,28 +180,28 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
 
             switch (direction) {
                 case "west": {
-                    isFinal ? delta = width/2 : delta =  - width/2
-                    return {
-                        x: position.x + delta,
-                        z: position.z,
-                    }
-                } 
-                case "east": {
-                    isFinal ? delta = width/2 : delta =  - width/2
+                    isFinal ? delta = width / 2 : delta = - width / 2
                     return {
                         x: position.x + delta,
                         z: position.z,
                     }
                 }
+                case "east": {
+                    isFinal ? delta = width / 2 : delta = - width / 2
+                    return {
+                        x: position.x - delta,
+                        z: position.z,
+                    }
+                }
                 case "south": {
-                    isFinal ? delta = depth/2 : delta =  - depth/2
+                    isFinal ? delta = depth / 2 : delta = - depth / 2
                     return {
                         x: position.x,
                         z: position.z - delta,
                     }
                 }
                 case "north": {
-                    isFinal ? delta = depth/2 : delta =  - depth/2
+                    isFinal ? delta = depth / 2 : delta = - depth / 2
                     return {
                         x: position.x,
                         z: position.z + delta,

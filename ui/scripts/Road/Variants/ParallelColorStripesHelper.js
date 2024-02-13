@@ -141,11 +141,12 @@ const createParallelColorStripesHelper = function (controllerConfig) {
                 const startTubeGeometry = new THREE.TubeGeometry(startLineCurve, 64, tubeRadius, 8, false);
                 const startTubeMesh = new THREE.Mesh(startTubeGeometry, tubeMaterial);
                 scene.object3D.add(startTubeMesh);
-                
-            } else if (lastElement.intersection && lastElement.intersectionWithEndBorder) {
+            }
+            if (lastElement.intersectionWithEndBorder) {
+                predecessorOfLastElement = roadObj.roadSectionObjArr[roadObj.roadSectionObjArr.length - 2]
                 const endLineCurve = new THREE.LineCurve3(
                     new THREE.Vector3(lastElement.intersectionWithEndBorder.x, 1, lastElement.intersectionWithEndBorder.z),
-                    new THREE.Vector3(lastElement.intersection.x, 1, lastElement.intersection.z)
+                    new THREE.Vector3(predecessorOfLastElement.intersection.x, 1, predecessorOfLastElement.intersection.z)
                 );
                 const endTubeGeometry = new THREE.TubeGeometry(endLineCurve, 64, tubeRadius, 8, false);
                 const endTubeMesh = new THREE.Mesh(endTubeGeometry, tubeMaterial);
