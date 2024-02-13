@@ -57,25 +57,100 @@ const createParallelColorStripesHelper = function (controllerConfig) {
             roadObjSectionPropertiesArr = globalRoadSectionPropertiesHelper
                 .getRoadObjSectionPropertiesArr(globalStartElementComponent, globalRelatedRoadObjsMap);
             roadObjSectionPropertiesArr.forEach(roadObj => {
-                drawSpheresOnMidpoints(roadObj);
-                drawTubesBetweenIntersections(roadObj);
-                drawSpheresOnRamps(roadObj);
-                drawTubesToStartEndElement(roadObj)
+                const laneSide = getLaneSideForRoadObj(roadObj);
+
+                if (laneSide === "right") {
+                    drawSpheresOnMidpoints(roadObj, laneSide);
+                    //drawTubesBetweenIntersections(roadObj, laneSide);
+                    //drawSpheresOnRamps(roadObj);
+                    //drawTubesToStartEndElement(roadObj)
+                }
+                
             })
         }
 
-        function drawSpheresOnMidpoints(roadObj) {
+        function drawSpheresOnMidpoints(roadObj, laneSide) {
             const scene = document.querySelector('a-scene');
             const sphereRadius = 0.2;
+
+            const offsetMap = getOffsetMap(roadObj)
+
             roadObj.roadSectionObjArr.forEach(roadSectionObj => {
                 if (roadSectionObj.intersection != null) {
                     const geometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
                     const material = new THREE.MeshBasicMaterial({ color: "lime" });
                     const sphere = new THREE.Mesh(geometry, material);
-                    sphere.position.set(roadSectionObj.intersection.x, 1, roadSectionObj.intersection.z);
+                    const offset = offsetMap.get(roadSectionObj.id)
+                    sphere.position.set(roadSectionObj.intersection.x + offset.x, 1, roadSectionObj.intersection.z + offset.z);
                     scene.object3D.add(sphere);
                 }
             })
+            
+        }
+
+        function getOffsetMap(roadObj) {
+            const offsetMap = new Map();
+            for (let i = 0; i < roadObj.roadSectionObjArr.length; i++) {
+                const currentRoadSection = roadObj.roadSectionObjArr[i]
+                const direction = currentRoadSection.direction;
+
+                let directionOfPredecessor
+                if (i === 0) directionOfPredecessor = null
+                else directionOfPredecessor = roadObj.roadSectionObjArr[i-1].direction
+
+                let directionOfSuccessor
+                if (i != roadObj.roadSectionObjArr.length -1) directionOfSuccessor = roadObj.roadSectionObjArr[i+1].direction
+                else directionOfSuccessor = null;
+
+                switch(direction) {
+                    case "north":
+                        if (directionOfPredecessor === "west" && !directionOfSuccessor) offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if (directionOfPredecessor === "east" && !directionOfSuccessor) offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if (!directionOfPredecessor && directionOfSuccessor === "west") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if (!directionOfPredecessor && directionOfSuccessor === "east") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+
+                        else if(directionOfPredecessor === "west" && directionOfSuccessor === "west") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if(directionOfPredecessor === "east" && directionOfSuccessor === "west") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if(directionOfPredecessor === "west" && directionOfSuccessor === "east") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if(directionOfPredecessor === "east" && directionOfSuccessor === "east") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else offsetMap.set(currentRoadSection.id, {x: null, z: null})
+                    case "south":
+                        if (directionOfPredecessor === "west" && !directionOfSuccessor) offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if (directionOfPredecessor === "east" && !directionOfSuccessor) offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if (!directionOfPredecessor && directionOfSuccessor === "west") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if (!directionOfPredecessor && directionOfSuccessor === "east") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+
+                        else if(directionOfPredecessor === "west" && directionOfSuccessor === "west") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if(directionOfPredecessor === "east" && directionOfSuccessor === "west") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if(directionOfPredecessor === "west" && directionOfSuccessor === "east") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if(directionOfPredecessor === "east" && directionOfSuccessor === "east") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else offsetMap.set(currentRoadSection.id, {x: null, z: null})
+                    case "west":
+                        if (directionOfPredecessor === "north" && !directionOfSuccessor) offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if (directionOfPredecessor === "south" && !directionOfSuccessor) offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if (!directionOfPredecessor && directionOfSuccessor === "north") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if (!directionOfPredecessor && directionOfSuccessor === "south") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+
+                        else if(directionOfPredecessor === "north" && directionOfSuccessor === "north") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if(directionOfPredecessor === "south" && directionOfSuccessor === "north") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if(directionOfPredecessor === "north" && directionOfSuccessor === "south") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if(directionOfPredecessor === "south" && directionOfSuccessor === "south") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else offsetMap.set(currentRoadSection.id, {x: null, z: null})
+                    case "east":
+                        if (directionOfPredecessor === "north" && !directionOfSuccessor) offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if (directionOfPredecessor === "south" && !directionOfSuccessor) offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if (!directionOfPredecessor && directionOfSuccessor === "north") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if (!directionOfPredecessor && directionOfSuccessor === "south") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+
+                        else if(directionOfPredecessor === "north" && directionOfSuccessor === "north") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if(directionOfPredecessor === "south" && directionOfSuccessor === "north") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if(directionOfPredecessor === "north" && directionOfSuccessor === "south") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else if(directionOfPredecessor === "south" && directionOfSuccessor === "south") offsetMap.set(currentRoadSection.id, {x: 1, z:1})
+                        else offsetMap.set(currentRoadSection.id, {x: null, z: null})
+                }
+            }
+            console.log(offsetMap)
+            return offsetMap;
         }
 
         function drawSpheresOnRamps(roadObj) {
@@ -100,10 +175,12 @@ const createParallelColorStripesHelper = function (controllerConfig) {
             })
         }
 
-        function drawTubesBetweenIntersections(roadObj) {
+        function drawTubesBetweenIntersections(roadObj, laneSide) {
             const scene = document.querySelector('a-scene');
             const tubeRadius = 0.05;
             const tubeMaterial = new THREE.MeshBasicMaterial({ color: "red" });
+
+            const offsetMap = getOffsetMap(roadObj)
 
             const intersections = roadObj.roadSectionObjArr
                 .filter(roadSectionObj => roadSectionObj.intersection != null)
@@ -113,9 +190,11 @@ const createParallelColorStripesHelper = function (controllerConfig) {
                 const startIntersection = intersections[i - 1];
                 const endIntersection = intersections[i];
 
+                const offset = offsetMap.get(roadSectionObj.id)
+
                 const lineCurve = new THREE.LineCurve3(
-                    new THREE.Vector3(startIntersection.x, 1, startIntersection.z),
-                    new THREE.Vector3(endIntersection.x, 1, endIntersection.z)
+                    new THREE.Vector3(startIntersection.x + offset, 1, startIntersection.z + offset),
+                    new THREE.Vector3(endIntersection.x + offsetMap, 1, endIntersection.z + offset)
                 );
 
                 const tubeGeometry = new THREE.TubeGeometry(lineCurve, 64, tubeRadius, 8, false);
