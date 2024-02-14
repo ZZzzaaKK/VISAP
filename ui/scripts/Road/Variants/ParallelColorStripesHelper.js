@@ -79,25 +79,24 @@ const createParallelColorStripesHelper = function (controllerConfig) {
                     const material = new THREE.MeshBasicMaterial({ color: "lime" });
                     const sphere = new THREE.Mesh(geometry, material);
 
-                    const offset = getOffsetForLaneSideAndDirection(laneSide, roadSectionObj.direction);
-                    sphere.position.set(roadSectionObj.intersection.x + offset, 1, roadSectionObj.intersection.z + offset)
+                    const offset = getOffsetMapping(laneSide, roadSectionObj);
+                    sphere.position.set(roadSectionObj.intersection.x + offset.x, 1, roadSectionObj.intersection.z + offset.z)
                     scene.object3D.add(sphere);
                 }
             })
-
         }
 
         function drawSpheresOnRamps(roadObj, laneSide) {
             const scene = document.querySelector('a-scene');
             const sphereRadius = 0.2;
             roadObj.roadSectionObjArr.forEach(roadSectionObj => {
-                const offset = getOffsetForLaneSideAndDirection(laneSide, roadSectionObj.direction);
+                const offset = getOffsetMapping(laneSide, roadSectionObj);
 
                 if (roadSectionObj.intersectionWithStartBorder != null) {
                     const geometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
                     const material = new THREE.MeshBasicMaterial({ color: "cyan" });
                     const sphere = new THREE.Mesh(geometry, material);
-                    sphere.position.set(roadSectionObj.intersectionWithStartBorder.x + offset, 1, roadSectionObj.intersectionWithStartBorder.z + offset);
+                    sphere.position.set(roadSectionObj.intersectionWithStartBorder.x + offset.x, 1, roadSectionObj.intersectionWithStartBorder.z + offset.z);
                     scene.object3D.add(sphere);
                 }
 
@@ -105,7 +104,7 @@ const createParallelColorStripesHelper = function (controllerConfig) {
                     const geometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
                     const material = new THREE.MeshBasicMaterial({ color: "green" });
                     const sphere = new THREE.Mesh(geometry, material);
-                    sphere.position.set(roadSectionObj.intersectionWithEndBorder.x + offset, 1, roadSectionObj.intersectionWithEndBorder.z + offset);
+                    sphere.position.set(roadSectionObj.intersectionWithEndBorder.x + offset.x, 1, roadSectionObj.intersectionWithEndBorder.z + offset.z);
                     scene.object3D.add(sphere);
                 }
             })
@@ -122,12 +121,12 @@ const createParallelColorStripesHelper = function (controllerConfig) {
                 const startIntersection = intersections[i - 1].intersection;
                 const endIntersection = intersections[i].intersection;
 
-                const offsetStart = getOffsetForLaneSideAndDirection(laneSide, intersections[i - 1].direction);
-                const offsetEnd = getOffsetForLaneSideAndDirection(laneSide, intersections[i].direction);
+                const offsetStart = getOffsetMapping(laneSide, intersections[i - 1]);
+                const offsetEnd = getOffsetMapping(laneSide, intersections[i]);
 
                 const lineCurve = new THREE.LineCurve3(
-                    new THREE.Vector3(startIntersection.x + offsetStart, 1, startIntersection.z + offsetStart),
-                    new THREE.Vector3(endIntersection.x + offsetEnd, 1, endIntersection.z + offsetEnd)
+                    new THREE.Vector3(startIntersection.x + offsetStart.x, 1, startIntersection.z + offsetStart.z),
+                    new THREE.Vector3(endIntersection.x + offsetEnd.x, 1, endIntersection.z + offsetEnd.z)
                 );
 
                 const tubeGeometry = new THREE.TubeGeometry(lineCurve, 64, tubeRadius, 8, false);
@@ -146,14 +145,14 @@ const createParallelColorStripesHelper = function (controllerConfig) {
 
             console.log(startElement.direction)
 
-            const offsetStart = getOffsetForLaneSideAndDirection(laneSide, startElement.direction);
-            const offsetEnd = getOffsetForLaneSideAndDirection(laneSide, lastElement.direction);
+            const offsetStart = getOffsetMapping(laneSide, startElement);
+            const offsetEnd = getOffsetMapping(laneSide, lastElement);
 
 
             if (startElement.intersection && startElement.intersectionWithStartBorder) {
                 const startLineCurve = new THREE.LineCurve3(
-                    new THREE.Vector3(startElement.intersectionWithStartBorder.x + offsetStart, 1, startElement.intersectionWithStartBorder.z + offsetStart),
-                    new THREE.Vector3(startElement.intersection.x + offsetStart, 1, startElement.intersection.z + offsetStart)
+                    new THREE.Vector3(startElement.intersectionWithStartBorder.x + offsetStart.x, 1, startElement.intersectionWithStartBorder.z + offsetStart.z),
+                    new THREE.Vector3(startElement.intersection.x + offsetStart.x, 1, startElement.intersection.z + offsetStart.z)
                 );
 
                 const startTubeGeometry = new THREE.TubeGeometry(startLineCurve, 64, tubeRadius, 8, false);
@@ -163,8 +162,8 @@ const createParallelColorStripesHelper = function (controllerConfig) {
             if (lastElement.intersectionWithEndBorder) {
                 predecessorOfLastElement = roadObj.roadSectionObjArr[roadObj.roadSectionObjArr.length - 2]
                 const endLineCurve = new THREE.LineCurve3(
-                    new THREE.Vector3(lastElement.intersectionWithEndBorder.x + offsetEnd, 1, lastElement.intersectionWithEndBorder.z + offsetEnd),
-                    new THREE.Vector3(predecessorOfLastElement.intersection.x + offsetEnd, 1, predecessorOfLastElement.intersection.z + offsetEnd)
+                    new THREE.Vector3(lastElement.intersectionWithEndBorder.x + offsetEnd.x, 1, lastElement.intersectionWithEndBorder.z + offsetEnd).z,
+                    new THREE.Vector3(predecessorOfLastElement.intersection.x + offsetEnd.x, 1, predecessorOfLastElement.intersection.z + offsetEnd.z)
                 );
                 const endTubeGeometry = new THREE.TubeGeometry(endLineCurve, 64, tubeRadius, 8, false);
                 const endTubeMesh = new THREE.Mesh(endTubeGeometry, tubeMaterial);
@@ -173,16 +172,16 @@ const createParallelColorStripesHelper = function (controllerConfig) {
         }
 
 
-        function getOffsetForLaneSideAndDirection(laneSide, direction) {
-            if (laneSide === "right") {
-                if (direction === "south") return globalStripeOffsetRoadCenter
-                else return - globalStripeOffsetRoadCenter
-            } else {
-                if (direction === "south") return - globalStripeOffsetRoadCenter
-                else return - globalStripeOffsetRoadCenter
-            }
-        }
+        function getOffsetMapping(laneSide, roadSectionObj) {
+            const direction = roadSectionObj.direction;
+            const predecessorDirection = roadSectionObj.predecessorDirection;
+            const successorDirection = roadSectionObj.successorDirection;
+            let x = 0.2;
+            let z = 0.2;
 
+            return { x, z };
+        }
+        
 
         function getLaneSideForRoadObj(roadObj) {
             if (roadObj.startElementId === globalStartElementComponent.id) return "right";

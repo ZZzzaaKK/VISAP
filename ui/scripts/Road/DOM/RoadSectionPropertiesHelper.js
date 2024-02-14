@@ -20,6 +20,7 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
             addDirectionOfRoadSectionsRelativeToStartElement(roadObjAdjustedArr);
             addIntersectionCoordinates(roadObjAdjustedArr);
             addBorderIntersectionForInitialAndFinalRoadSection(roadObjAdjustedArr);
+            addPredecessorAndSuccessorDirections(roadObjAdjustedArr);
             console.log(roadObjAdjustedArr)
             return roadObjAdjustedArr;
         }
@@ -42,8 +43,7 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
                     const refRoadSectionObj = roadObj.roadSectionObjArr[i - 1];
                     // a curve
                     if (currentRoadSectionObj.direction != refRoadSectionObj.direction) {
-                        currentRoadSectionObj.intersection, refRoadSectionObj.intersection
-                            = getIntersectionCoordinates(currentRoadSectionObj, refRoadSectionObj)
+                        currentRoadSectionObj.intersection, refRoadSectionObj.intersection = getIntersectionCoordinates(currentRoadSectionObj, refRoadSectionObj)
                     } else refRoadSectionObj.intersection = null;
                 }
                 const lastRoadSection = roadObj.roadSectionObjArr[roadObj.roadSectionObjArr.length - 1];
@@ -80,6 +80,17 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
             });
         }
 
+        function addPredecessorAndSuccessorDirections(roadObjAdjustedArr) {
+            roadObjAdjustedArr.forEach(roadObj => {
+                for (let i = 0; i < roadObj.roadSectionObjArr.length; i++) {
+                    const currentRoadSection = roadObj.roadSectionObjArr[i];
+                    const predecessorDirection = i > 0 ? roadObj.roadSectionObjArr[i - 1].direction : null;
+                    const successorDirection = i < roadObj.roadSectionObjArr.length - 1 ? roadObj.roadSectionObjArr[i + 1].direction : null;
+                    currentRoadSection.predecessorDirection = predecessorDirection;
+                    currentRoadSection.successorDirection = successorDirection;
+                }
+            });
+        }
         /************************
                3D Helper
         ************************/
@@ -90,10 +101,10 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
             const initialRoadSectionMidPoint = document.getElementById(initialRoadSectionObj.id).getAttribute("position");
             const startElementMidPoint = globalStartElementComponent.getAttribute("position");
             const directionMap = {
-                east: initialRoadSectionMidPoint.x < startElementMidPoint.x,
-                west: initialRoadSectionMidPoint.x > startElementMidPoint.x,
-                north: initialRoadSectionMidPoint.z > startElementMidPoint.z,
-                south: initialRoadSectionMidPoint.z < startElementMidPoint.z,
+                right: initialRoadSectionMidPoint.x < startElementMidPoint.x,
+                left: initialRoadSectionMidPoint.x > startElementMidPoint.x,
+                up: initialRoadSectionMidPoint.z > startElementMidPoint.z,
+                down: initialRoadSectionMidPoint.z < startElementMidPoint.z,
             };
             const direction = Object.keys(directionMap).find(key => directionMap[key]);
             return direction;
@@ -105,28 +116,28 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
             const refMidPoint = document.getElementById(refRoadSectionObj.id).getAttribute("position");
             // imagine a compass turning its needle based on your direction: here, assigned directions depend on reference directions
             switch (refDirection) {
-                case "west":
-                    if (currentMidPoint.x > refMidPoint.x && currentMidPoint.z === refMidPoint.z) return "west";
-                    if (currentMidPoint.x > refMidPoint.x && currentMidPoint.z > refMidPoint.z) return "north";
-                    if (currentMidPoint.x > refMidPoint.x && currentMidPoint.z < refMidPoint.z) return "south";
+                case "left":
+                    if (currentMidPoint.x > refMidPoint.x && currentMidPoint.z === refMidPoint.z) return "left";
+                    if (currentMidPoint.x > refMidPoint.x && currentMidPoint.z > refMidPoint.z) return "up";
+                    if (currentMidPoint.x > refMidPoint.x && currentMidPoint.z < refMidPoint.z) return "down";
                     break;
 
-                case "east":
-                    if (currentMidPoint.x < refMidPoint.x && currentMidPoint.z === refMidPoint.z) return "east";
-                    if (currentMidPoint.x < refMidPoint.x && currentMidPoint.z > refMidPoint.z) return "north";
-                    if (currentMidPoint.x < refMidPoint.x && currentMidPoint.z < refMidPoint.z) return "south";
+                case "right":
+                    if (currentMidPoint.x < refMidPoint.x && currentMidPoint.z === refMidPoint.z) return "right";
+                    if (currentMidPoint.x < refMidPoint.x && currentMidPoint.z > refMidPoint.z) return "up";
+                    if (currentMidPoint.x < refMidPoint.x && currentMidPoint.z < refMidPoint.z) return "down";
                     break;
 
-                case "south":
-                    if (currentMidPoint.x === refMidPoint.x && currentMidPoint.z < refMidPoint.z) return "south";
-                    if (currentMidPoint.x > refMidPoint.x && currentMidPoint.z < refMidPoint.z) return "west";
-                    if (currentMidPoint.x < refMidPoint.x && currentMidPoint.z < refMidPoint.z) return "east";
+                case "down":
+                    if (currentMidPoint.x === refMidPoint.x && currentMidPoint.z < refMidPoint.z) return "down";
+                    if (currentMidPoint.x > refMidPoint.x && currentMidPoint.z < refMidPoint.z) return "left";
+                    if (currentMidPoint.x < refMidPoint.x && currentMidPoint.z < refMidPoint.z) return "right";
                     break;
 
-                case "north":
-                    if (currentMidPoint.x === refMidPoint.x && currentMidPoint.z > refMidPoint.z) return "north";
-                    if (currentMidPoint.x > refMidPoint.x && currentMidPoint.z > refMidPoint.z) return "west";
-                    if (currentMidPoint.x < refMidPoint.x && currentMidPoint.z > refMidPoint.z) return "east";
+                case "up":
+                    if (currentMidPoint.x === refMidPoint.x && currentMidPoint.z > refMidPoint.z) return "up";
+                    if (currentMidPoint.x > refMidPoint.x && currentMidPoint.z > refMidPoint.z) return "left";
+                    if (currentMidPoint.x < refMidPoint.x && currentMidPoint.z > refMidPoint.z) return "right";
                     break;
             }
         }
@@ -179,28 +190,28 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
             let delta;
 
             switch (direction) {
-                case "west": {
+                case "left": {
                     isFinal ? delta = width / 2 : delta = - width / 2
                     return {
                         x: position.x + delta,
                         z: position.z,
                     }
                 }
-                case "east": {
+                case "right": {
                     isFinal ? delta = width / 2 : delta = - width / 2
                     return {
                         x: position.x - delta,
                         z: position.z,
                     }
                 }
-                case "south": {
+                case "down": {
                     isFinal ? delta = depth / 2 : delta = - depth / 2
                     return {
                         x: position.x,
                         z: position.z - delta,
                     }
                 }
-                case "north": {
+                case "up": {
                     isFinal ? delta = depth / 2 : delta = - depth / 2
                     return {
                         x: position.x,
