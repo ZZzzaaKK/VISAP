@@ -142,8 +142,6 @@ const createParallelColorStripesHelper = function (controllerConfig) {
             const lastElement = roadObj.roadSectionObjArr[roadObj.roadSectionObjArr.length - 1];
             const startElement = roadObj.roadSectionObjArr[0];
 
-            console.log(startElement.direction)
-
             const offsetStart = getOffsetMapping(laneSide, startElement);
             const offsetEnd = getOffsetMapping(laneSide, lastElement);
 

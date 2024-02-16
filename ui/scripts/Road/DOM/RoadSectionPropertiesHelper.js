@@ -27,7 +27,6 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
             addDirectionOfRoadSectionsRelativeToStartElement(roadObjAdjustedArr);
             addRoadSectionAdjustedIntersections(roadObjAdjustedArr);
             addDistrictIntersections(roadObjAdjustedArr);
-            console.log(roadObjAdjustedArr)
             return roadObjAdjustedArr;
         }
 
@@ -127,7 +126,6 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
                     break;
                 }
             }
-            console.log(clone)
             return clone;
         }
         
@@ -234,11 +232,13 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
             return virtualDistrictIntersection;
         }
 
-        function calculateDistrictIntersection(virtualHelperStripeOfCurrent, isFinal) {
-            const direction = virtualHelperStripeOfCurrent.direction;
-            const width = virtualHelperStripeOfCurrent.width;
-            const depth = virtualHelperStripeOfCurrent.depth;
-            const position = virtualHelperStripeOfCurrent.position;
+        function calculateDistrictIntersection(virtualHelperStripe, isFinal) {
+            const direction = virtualHelperStripe.direction;
+            const width = virtualHelperStripe.width;
+            const depth = virtualHelperStripe.depth;
+            const position = virtualHelperStripe.position;
+
+            console.log(depth)
 
             let delta;
 
