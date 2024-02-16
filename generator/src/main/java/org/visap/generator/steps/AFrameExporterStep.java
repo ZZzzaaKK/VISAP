@@ -11,6 +11,12 @@ import org.visap.generator.database.DatabaseConnector;
 import org.visap.generator.export.core.AFrameExporter;
 import org.visap.generator.export.core.MetaDataOutput;
 import org.visap.generator.export.features.roads.RoadExporter;
+import org.visap.generator.metaphors.metropolis.steps.MetaDataExporter;
+import org.visap.generator.metaphors.metropolis.steps.MetropolisCreator;
+import org.visap.generator.metaphors.metropolis.steps.MetropolisDesigner;
+import org.visap.generator.metaphors.metropolis.steps.MetropolisLayouter;
+
+import java.util.List;
 import java.util.Scanner;
 
 public class AFrameExporterStep {
@@ -24,6 +30,9 @@ public class AFrameExporterStep {
         boolean isSilentMode = Config.setup.silentMode();
 
         nodeRepository = new SourceNodeRepository();
+        
+        List<String> whitelist = Config.setup.packageWhitelist();
+        nodeRepository.applyPackageWhitelist(whitelist);
         nodeRepository.loadNodesByPropertyValue(SAPNodeProperties.type_name, SAPNodeTypes.Namespace.name());
         nodeRepository.loadNodesByRelation(SAPRelationLabels.CONTAINS, true);
         nodeRepository.loadNodesByRelation(SAPRelationLabels.TYPEOF, true);

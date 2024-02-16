@@ -5,6 +5,7 @@ import org.apache.commons.logging.LogFactory;
 import org.visap.generator.abap.enums.SAPNodeProperties;
 import org.visap.generator.abap.enums.SAPNodeTypes;
 import org.visap.generator.abap.enums.SAPRelationLabels;
+import org.visap.generator.configuration.Config;
 import org.visap.generator.repository.CityElement;
 import org.visap.generator.repository.CityRepository;
 import org.visap.generator.repository.SourceNodeRepository;
@@ -48,13 +49,15 @@ public class MetropolisCreator {
         typeMapping.put(SAPNodeTypes.Interface, List.of(CityElement.CityType.District));
         typeMapping.put(SAPNodeTypes.Method, List.of(CityElement.CityType.Building));
         typeMapping.put(SAPNodeTypes.Attribute, List.of(CityElement.CityType.Building));
-        typeMapping.put(SAPNodeTypes.Tablebuilding, List.of(CityElement.CityType.Building));
-        typeMapping.put(SAPNodeTypes.View, List.of(CityElement.CityType.Building));
-        typeMapping.put(SAPNodeTypes.Struct, List.of(CityElement.CityType.Building));
-        typeMapping.put(SAPNodeTypes.Domain, List.of(CityElement.CityType.Building));
-        typeMapping.put(SAPNodeTypes.Dataelement, List.of(CityElement.CityType.Building));
-        typeMapping.put(SAPNodeTypes.DDIC, List.of(CityElement.CityType.District));
-        typeMapping.put(SAPNodeTypes.Table, List.of(CityElement.CityType.District));
+        if(Config.features.showDDIC()){
+            typeMapping.put(SAPNodeTypes.Tablebuilding, List.of(CityElement.CityType.Building));
+            typeMapping.put(SAPNodeTypes.View, List.of(CityElement.CityType.Building));
+            typeMapping.put(SAPNodeTypes.Struct, List.of(CityElement.CityType.Building));
+            typeMapping.put(SAPNodeTypes.Domain, List.of(CityElement.CityType.Building));
+            typeMapping.put(SAPNodeTypes.Dataelement, List.of(CityElement.CityType.Building));
+            typeMapping.put(SAPNodeTypes.DDIC, List.of(CityElement.CityType.District));
+            typeMapping.put(SAPNodeTypes.Table, List.of(CityElement.CityType.District));
+        }
 
         for (Map.Entry<SAPNodeTypes, List<CityElement.CityType>> entry : typeMapping.entrySet()) {
             for (CityElement.CityType cityType : entry.getValue()) {
@@ -128,10 +131,10 @@ public class MetropolisCreator {
                 CityElement.CityType.Building, SAPNodeProperties.type_name, buildingElementTypeName);
 
         for (CityElement buildingElement : BuildingElements) {
-            String districtTypename = element.getSourceNodeProperty(SAPNodeProperties.element_id);
-            String buildingTypeName = buildingElement.getSourceNodeProperty(SAPNodeProperties.element_id);
+            String districtId = element.getSourceNodeID().toString();
+            String buildingId = buildingElement.getSourceNodeID().toString();
 
-            if (buildingTypeName.equals(districtTypename)) {
+            if (buildingId.equals(districtId)) {
                 element.addSubElement(buildingElement);
                 buildingElement.setParentElement(element);
             }

@@ -18,4 +18,7 @@ public interface Features extends Config {
 
     @DefaultValue("false")
     Boolean inputUsesCSV();
+
+    @DefaultValue("false")
+    Boolean showDDIC();
 }
