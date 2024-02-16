@@ -18,12 +18,12 @@ public class MetaDataLoaderStep {
     private static final String fileSuffix = "Meta.csv";
 
     public static void main(String[] args) throws Exception {
-
         boolean isSilentMode = Config.setup.silentMode();
         Scanner userInput = new Scanner(System.in);
 
         List<Path> files = new CsvFilesInputFilter(folderName, fileSuffix).getFiles();
         if (files.isEmpty()){
+            userInput.close();
             throw new InvocationTargetException(new Exception(),"Meta CSV file wasn't found");
         }
 
