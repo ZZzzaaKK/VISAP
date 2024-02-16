@@ -2,53 +2,33 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
     return (function () {
 
         let globalStartElementComponent;
-        let globalRoadSectionPropsMap = new Map();
+        let globalStripesOffset;
+        let globalShrinkPct;
 
         /************************
             Public Functions
         ************************/
 
         // returns a props map for individual roadSections where startElement serves as reference for every attribute
-        function getRoadObjSectionPropertiesArr(startElementComponent, relatedRoadObjsMap) {
+        function getRoadObjSectionPropertiesArr(startElementComponent, relatedRoadObjsMap, stripesOffset = 0.25, shrinkPct = 0.7) {
             globalStartElementComponent = startElementComponent;
+            globalShrinkPct = shrinkPct;
+            globalStripesOffset = stripesOffset;
             const roadObjAdjustedArr = getRoadObjAdjustedArr(relatedRoadObjsMap);
             return roadObjAdjustedArr;
         }
 
+        /************************
+               Adjusting
+       ************************/
+
         function getRoadObjAdjustedArr(relatedRoadObjsMap) {
             let roadObjAdjustedArr = getRoadObjsWithAdjustedRoadSectionOrder(relatedRoadObjsMap);
             addDirectionOfRoadSectionsRelativeToStartElement(roadObjAdjustedArr);
-            addIntersectionCoordinates(roadObjAdjustedArr);
-            addBorderIntersectionForInitialAndFinalRoadSection(roadObjAdjustedArr);
-            addPredecessorAndSuccessorDirections(roadObjAdjustedArr);
+            addRoadSectionAdjustedIntersections(roadObjAdjustedArr);
+            addDistrictIntersections(roadObjAdjustedArr);
             console.log(roadObjAdjustedArr)
             return roadObjAdjustedArr;
-        }
-
-        function getRoadObjsWithAdjustedRoadSectionOrder(relatedRoadObjsMap) {
-            const roadObjsInCallsRelation = getRoadObjsInCallsRelation(relatedRoadObjsMap);
-            const roadObjsInIsCalledRelation = getRoadObjsInIsCalledRelation(relatedRoadObjsMap);
-            const reversedIsCalledRoadObjs = roadObjsInIsCalledRelation.map(roadObj => ({
-                ...roadObj,
-                roadSectionObjArr: [...roadObj.roadSectionObjArr].reverse(),
-            }));
-            const roadObjAdjustedArr = [...roadObjsInCallsRelation, ...reversedIsCalledRoadObjs];
-            return roadObjAdjustedArr;
-        }
-
-        function addIntersectionCoordinates(roadObjAdjustedArr) {
-            roadObjAdjustedArr.forEach(roadObj => {
-                for (let i = 1; i < roadObj.roadSectionObjArr.length; i++) {
-                    const currentRoadSectionObj = roadObj.roadSectionObjArr[i];
-                    const refRoadSectionObj = roadObj.roadSectionObjArr[i - 1];
-                    // a curve
-                    if (currentRoadSectionObj.direction != refRoadSectionObj.direction) {
-                        currentRoadSectionObj.intersection, refRoadSectionObj.intersection = getIntersectionCoordinates(currentRoadSectionObj, refRoadSectionObj)
-                    } else refRoadSectionObj.intersection = null;
-                }
-                const lastRoadSection = roadObj.roadSectionObjArr[roadObj.roadSectionObjArr.length - 1];
-                lastRoadSection.intersection = null;
-            })
         }
 
         function addDirectionOfRoadSectionsRelativeToStartElement(roadObjAdjustedArr) {
@@ -65,14 +45,30 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
             })
         }
 
-        function addBorderIntersectionForInitialAndFinalRoadSection(roadObjAdjustedArr) {
+        function addRoadSectionAdjustedIntersections(roadObjAdjustedArr) {
+            roadObjAdjustedArr.forEach(roadObj => {
+                for (let i = 1; i < roadObj.roadSectionObjArr.length; i++) {
+                    const currentRoadSectionObj = roadObj.roadSectionObjArr[i];
+                    const refRoadSectionObj = roadObj.roadSectionObjArr[i - 1];
+                    // a curve
+                    if (currentRoadSectionObj.direction != refRoadSectionObj.direction) {
+                        currentRoadSectionObj.intersection, refRoadSectionObj.intersection
+                            = getRoadSectionIntersection(currentRoadSectionObj, refRoadSectionObj)
+                    } else refRoadSectionObj.intersection = null;
+                }
+                const lastRoadSection = roadObj.roadSectionObjArr[roadObj.roadSectionObjArr.length - 1];
+                lastRoadSection.intersection = null;
+            })
+        }
+
+        function addDistrictIntersections(roadObjAdjustedArr) {
             roadObjAdjustedArr.forEach(roadObj => {
                 const length = roadObj.roadSectionObjArr.length;
                 for (let i = 0; i < length; i++) {
                     let intersectionWithStartBorder = null;
                     let intersectionWithEndBorder = null;
-                    if (i === 0) intersectionWithStartBorder = getCoordinatesForStartEndElementIntersection(roadObj.roadSectionObjArr[i]);
-                    if (i === length - 1) intersectionWithEndBorder = getCoordinatesForStartEndElementIntersection(roadObj.roadSectionObjArr[i], isFinal = true);
+                    if (i === 0) intersectionWithStartBorder = getDistrictIntersection(roadObj.roadSectionObjArr[i], isFinal = false);
+                    if (i === length - 1) intersectionWithEndBorder = getDistrictIntersection(roadObj.roadSectionObjArr[i], isFinal = true);
 
                     roadObj.roadSectionObjArr[i].intersectionWithStartBorder = intersectionWithStartBorder;
                     roadObj.roadSectionObjArr[i].intersectionWithEndBorder = intersectionWithEndBorder;
@@ -80,19 +76,64 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
             });
         }
 
-        function addPredecessorAndSuccessorDirections(roadObjAdjustedArr) {
-            roadObjAdjustedArr.forEach(roadObj => {
-                for (let i = 0; i < roadObj.roadSectionObjArr.length; i++) {
-                    const currentRoadSection = roadObj.roadSectionObjArr[i];
-                    const predecessorDirection = i > 0 ? roadObj.roadSectionObjArr[i - 1].direction : null;
-                    const successorDirection = i < roadObj.roadSectionObjArr.length - 1 ? roadObj.roadSectionObjArr[i + 1].direction : null;
-                    currentRoadSection.predecessorDirection = predecessorDirection;
-                    currentRoadSection.successorDirection = successorDirection;
-                }
-            });
-        }
         /************************
-               3D Helper
+         Virtual Helper Stripes
+        ************************/
+
+        function constructVirtualHelperStripe(roadSectionObj) {
+            const component = document.getElementById(roadSectionObj.id);
+            const width = component.getAttribute("width");
+            const depth = component.getAttribute("depth");
+            const position = component.getAttribute("position");
+
+            let virtualHelperStripe = {
+                width, depth, position
+            }
+
+            const clone = adjustDimensionsAndPosition(roadSectionObj, virtualHelperStripe);
+
+            return clone;
+        }
+
+        function adjustDimensionsAndPosition(roadSectionObj, virtualHelperStripe) {
+            let clone = {}; // Initialize clone as an empty object
+            switch (roadSectionObj.direction) {
+                case "up": {
+                    clone.width = virtualHelperStripe.width * (1 - globalShrinkPct);
+                    clone.depth = virtualHelperStripe.depth;
+                    clone.position = { ...virtualHelperStripe.position }; // Clone position object
+                    clone.position.x -= globalStripesOffset;
+                    break;
+                }
+                case "down": {
+                    clone.width = virtualHelperStripe.width * (1 - globalShrinkPct);
+                    clone.depth = virtualHelperStripe.depth;
+                    clone.position = { ...virtualHelperStripe.position }; // Clone position object
+                    clone.position.x += globalStripesOffset;
+                    break;
+                }
+                case "left": {
+                    clone.width = virtualHelperStripe.width;
+                    clone.depth = virtualHelperStripe.depth * (1 - globalShrinkPct);
+                    clone.position = { ...virtualHelperStripe.position }; // Clone position object
+                    clone.position.z += globalStripesOffset;
+                    break;
+                }
+                case "right": {
+                    clone.width = virtualHelperStripe.width;
+                    clone.depth = virtualHelperStripe.depth * (1 - globalShrinkPct);
+                    clone.position = { ...virtualHelperStripe.position }; // Clone position object
+                    clone.position.z -= globalStripesOffset;
+                    break;
+                }
+            }
+            console.log(clone)
+            return clone;
+        }
+        
+
+        /************************
+            Direction Helper
         ************************/
 
         function getDirectionForInitialRoadSection(initialRoadSectionObj) {
@@ -142,18 +183,25 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
             }
         }
 
-        function getIntersectionCoordinates(currentRoadSectionObj, refRoadSectionObj) {
-            const currentComponent = document.getElementById(currentRoadSectionObj.id);
-            const predecessorComponent = document.getElementById(refRoadSectionObj.id);
+        /************************
+           Intersection Helper
+        ************************/
 
-            const currentPos = currentComponent.getAttribute("position");
-            const predecessorPos = predecessorComponent.getAttribute("position");
+        function getRoadSectionIntersection(currentRoadSectionObj, refRoadSectionObj) {
+            const virtualHelperStripeOfCurrent = constructVirtualHelperStripe(currentRoadSectionObj);
+            const virtualHelperStripeOfRef = constructVirtualHelperStripe(refRoadSectionObj);
+            const virtualRoadSectionIntersection = calculateRoadSectionIntersectionMidpoint(virtualHelperStripeOfCurrent, virtualHelperStripeOfRef)
+            return virtualRoadSectionIntersection;
+        }
 
-            const currentWidth = currentComponent.getAttribute("width");
-            const currentDepth = currentComponent.getAttribute("depth");
+        function calculateRoadSectionIntersectionMidpoint(virtualHelperStripeOfCurrent, virtualHelperStripeOfRef) {
+            const currentPos = virtualHelperStripeOfCurrent.position
+            const currentWidth = virtualHelperStripeOfCurrent.width
+            const currentDepth = virtualHelperStripeOfCurrent.depth
 
-            const predecessorWidth = predecessorComponent.getAttribute("width");
-            const predecessorDepth = predecessorComponent.getAttribute("depth");
+            const refPos = virtualHelperStripeOfRef.position
+            const refWidth = virtualHelperStripeOfRef.width
+            const refDepth = virtualHelperStripeOfRef.depth
 
             // calculate extents of rectangles in both directions
             const currentLeftX = currentPos.x - currentWidth / 2;
@@ -161,31 +209,36 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
             const currentTopZ = currentPos.z - currentDepth / 2;
             const currentBottomZ = currentPos.z + currentDepth / 2;
 
-            const predecessorLeftX = predecessorPos.x - predecessorWidth / 2;
-            const predecessorRightX = predecessorPos.x + predecessorWidth / 2;
-            const predecessorTopZ = predecessorPos.z - predecessorDepth / 2;
-            const predecessorBottomZ = predecessorPos.z + predecessorDepth / 2;
+            const refLeftX = refPos.x - refWidth / 2;
+            const refRightX = refPos.x + refWidth / 2;
+            const refTopZ = refPos.z - refDepth / 2;
+            const refBottomZ = refPos.z + refDepth / 2;
 
             // calculate intersection region
-            const intersectionLeftX = Math.max(currentLeftX, predecessorLeftX);
-            const intersectionRightX = Math.min(currentRightX, predecessorRightX);
-            const intersectionTopZ = Math.max(currentTopZ, predecessorTopZ);
-            const intersectionBottomZ = Math.min(currentBottomZ, predecessorBottomZ);
+            const intersectionLeftX = Math.max(currentLeftX, refLeftX);
+            const intersectionRightX = Math.min(currentRightX, refRightX);
+            const intersectionTopZ = Math.max(currentTopZ, refTopZ);
+            const intersectionBottomZ = Math.min(currentBottomZ, refBottomZ);
 
             // Calculate midpoint of intersection region
             const intersectionMidpointX = (intersectionLeftX + intersectionRightX) / 2;
             const intersectionMidpointZ = (intersectionTopZ + intersectionBottomZ) / 2;
-
             const intersectionMidpoint = { x: intersectionMidpointX, z: intersectionMidpointZ };
 
             return intersectionMidpoint;
         }
 
-        function getCoordinatesForStartEndElementIntersection(roadSectionObj, isFinal = false) {
-            const direction = roadSectionObj.direction;
-            const width = document.getElementById(roadSectionObj.id).getAttribute("width");
-            const depth = document.getElementById(roadSectionObj.id).getAttribute("depth");
-            const position = document.getElementById(roadSectionObj.id).getAttribute("position");
+        function getDistrictIntersection(roadSectionObj, isFinal) {
+            const virtualHelperStripe = constructVirtualHelperStripe(roadSectionObj);
+            const virtualDistrictIntersection = calculateDistrictIntersection(virtualHelperStripe, isFinal)
+            return virtualDistrictIntersection;
+        }
+
+        function calculateDistrictIntersection(virtualHelperStripeOfCurrent, isFinal) {
+            const direction = virtualHelperStripeOfCurrent.direction;
+            const width = virtualHelperStripeOfCurrent.width;
+            const depth = virtualHelperStripeOfCurrent.depth;
+            const position = virtualHelperStripeOfCurrent.position;
 
             let delta;
 
@@ -222,8 +275,19 @@ const createRoadSectionPropertiesHelper = function (controllerConfig) {
         }
 
         /************************
-             Other Helper
+              Other Helper
         ************************/
+
+        function getRoadObjsWithAdjustedRoadSectionOrder(relatedRoadObjsMap) {
+            const roadObjsInCallsRelation = getRoadObjsInCallsRelation(relatedRoadObjsMap);
+            const roadObjsInIsCalledRelation = getRoadObjsInIsCalledRelation(relatedRoadObjsMap);
+            const reversedIsCalledRoadObjs = roadObjsInIsCalledRelation.map(roadObj => ({
+                ...roadObj,
+                roadSectionObjArr: [...roadObj.roadSectionObjArr].reverse(),
+            }));
+            const roadObjAdjustedArr = [...roadObjsInCallsRelation, ...reversedIsCalledRoadObjs];
+            return roadObjAdjustedArr;
+        }
 
         function getRoadObjsInCallsRelation(relatedRoadObjsMap) {
             return Array.from(relatedRoadObjsMap.values())

@@ -33,7 +33,6 @@ const createParallelColorStripesHelper = function (controllerConfig) {
         function startRoadHighlightActionsForStartElement(startElementComponent, relatedRoadObjsMap) {
             globalStartElementComponent = startElementComponent;
             globalRelatedRoadObjsMap = relatedRoadObjsMap;
-
             globalDomHelper.handleLegendForAction("select");
             globalDomHelper.handleUnrelatedEntityMonochromacyForAction("select", globalRelatedRoadObjsMap);
             handleParallelStripsCreation();
@@ -176,8 +175,8 @@ const createParallelColorStripesHelper = function (controllerConfig) {
             const direction = roadSectionObj.direction;
             const predecessorDirection = roadSectionObj.predecessorDirection;
             const successorDirection = roadSectionObj.successorDirection;
-            let x = 0.2;
-            let z = 0.2;
+            let x = 0;
+            let z = 0;
 
             return { x, z };
         }
