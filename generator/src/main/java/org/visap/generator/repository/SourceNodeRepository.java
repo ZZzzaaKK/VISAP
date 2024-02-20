@@ -94,10 +94,10 @@ public class SourceNodeRepository {
         String relatedNodesStatement = "";
         if (forward) {
             relatedNodesStatement = "MATCH (m)-[:" + relationType.name() + "]->(n) WHERE ID(m) IN " + nodeIDString
-                    + "AND " + this.packageWhitelistQuery + " RETURN m, n";
+                    + " AND " + this.packageWhitelistQuery + " RETURN m, n";
         } else {
             relatedNodesStatement = "MATCH (m)<-[:" + relationType.name() + "]-(n) WHERE ID(m) IN " + nodeIDString
-                    + "AND " + this.packageWhitelistQuery + " RETURN m, n";
+                    + " AND " + this.packageWhitelistQuery + " RETURN m, n";
         }
 
         AtomicInteger nodeCounter = new AtomicInteger(0);
@@ -122,10 +122,12 @@ public class SourceNodeRepository {
             Node mNode = result.get("m").asNode();
             mNode = nodeById.get(mNode.id());
 
+            // TODO: Figure out when this can happen
+            if (mNode == null) continue;
+
             addNodesByRelation(mNode, nNode, relationType.name());
             relationCounter.addAndGet(1);
         }
-        ;
 
         int nodesAfter = nodeById.size();
 
