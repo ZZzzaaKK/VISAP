@@ -1,6 +1,5 @@
 package org.visap.generator.metaphors.metropolis.steps;
 
-import org.apache.commons.lang3.math.NumberUtils;
 import org.visap.generator.abap.AMetaDataMap;
 import org.visap.generator.configuration.Config;
 import org.visap.generator.abap.enums.SAPNodeProperties;
@@ -134,13 +133,7 @@ public class MetaDataExporter {
             String propValue = node.get(prop.toString()).toString().replaceAll("\"", "");
 
             // Write strings with quotation marks and numbers without
-            if (NumberUtils.isCreatable(propValue)) {
-                builder.append(
-                        "\"" + AMetaDataMap.getMetaDataProperty(prop.toString()) + "\": " + propValue + "," + "\n");
-            } else {
-                builder.append(
-                        "\"" + AMetaDataMap.getMetaDataProperty(prop.toString()) + "\": \"" + propValue + "\"," + "\n");
-            }
+                builder.append("\"" + AMetaDataMap.getMetaDataProperty(prop.toString()) + "\": \"" + propValue + "\",\n");
         });
 
         return builder.toString();
